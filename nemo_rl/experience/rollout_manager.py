@@ -786,12 +786,23 @@ class AsyncNemoGymRolloutImpl:
             rollout_inputs, timer, timer_prefix
         )
         source_message_log = input_sample["message_log"]
+# The prompt log and each completion's log can alias the same message
+        # dictionaries; share one processed-id set so a rollout-matched marker
+        # consumed on one view cannot leave later views free to overwrite the
+        # repaired media.
+        processed_target_ids: set[int] = set()
         attach_static_multimodal_payload(
-            prompt_message_log, source_message_log, self._tokenizer
+            prompt_message_log,
+            source_message_log,
+            self._tokenizer,
+            processed_target_ids,
         )
         for completion in completions:
             attach_static_multimodal_payload(
-                completion.message_log, source_message_log, self._tokenizer
+                completion.message_log,
+                source_message_log,
+                self._tokenizer,
+                processed_target_ids,
             )
 
         timer.stop(f"{timer_prefix}/total")
